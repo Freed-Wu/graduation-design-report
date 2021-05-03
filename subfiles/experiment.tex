@@ -1,0 +1,179 @@
+\documentclass[../main]{subfiles}
+\begin{document}
+\mode*
+
+\chapter{实验}%
+\label{cha:experiment}
+\mode<representation>{%
+  \section{实验}%
+  \label{sec:experiment}
+}
+
+实验分为如下2个环节：
+
+\mode<article>{%
+  \section{单任务学习}%
+  \label{sec:stl}
+}
+
+需要先在多任务学习开始前进行单任务学习，原因如下：
+
+\begin{itemize}
+  \item 为了客观的比较多任务学习与单任务学习相比到底有无提升，提升多少，需要
+    同时得到单任务学习和多任务学习的结果；
+  \item 为了更好的提升多任务模型的性能，需要将单任务模型的权重作为多任务模型
+    训练的初始化权重。
+\end{itemize}
+
+\mode<article>{%
+  \section{多任务学习}%
+  \label{sec:mtl}
+}
+
+在完成了章节~\ref{sec:stl}的实验后，利用单任务学习得到的模型权重来初始化多任
+务模型的权重。
+
+\begin{frame}{实验}
+  为了节省实验时间，对于耗时较高的语义分割、显著点检测只每隔10个时期和最后10个
+  时期评估一次性能。
+
+  \mode<article>{单、多任务性能随时间的变化如图~\ref{fig:result}。}单、多任务
+  模型分别在 60、80 个时期后都出现了收敛的趋势。
+\end{frame}
+
+在1块 Nvidia GTX 1080 Ti 上实验的时间如表~\ref{tab:time}所示。原始实验数据可在
+\url{https://github.com/Freed-Wu/graduation-design-report/releases/tag/data}找
+到。
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[htbp]{\linewidth}
+    \begin{frame}[fragile]{语义分割}
+      \centering
+      \begin{tikzpicture}
+        \begin{axis}[
+            ylabel=IoU/\%,
+            legend style={%
+              at={(1, 0)},
+              anchor=south west,
+            },
+            legend entries={%
+              单任务在测试集,
+              单任务在训练集,
+              多任务在测试集,
+              多任务在训练集,
+              单任务前人最优结果,
+              多任务前人最优结果,
+          }]
+          \addplot[blue, mark=triangle*] table {data/stl-semseg-test.dat};
+          \addplot[blue, mark=triangle] table {data/stl-semseg-train.dat};
+          \addplot[red, mark=triangle*] table {data/mti-semseg-test.dat};
+          \addplot[red, mark=triangle] table {data/mti-semseg-train.dat};
+          \addplot[blue, domain=0:60] {59.5};
+          \addplot[red, domain=0:80] {64.3};
+        \end{axis}
+      \end{tikzpicture}
+    \end{frame}
+    \caption{语义分割}%
+    \label{fig:semseg}
+  \end{subfigure}
+
+  \begin{subfigure}[htbp]{\linewidth}
+    \centering
+    \begin{frame}[fragile]{人体解析}
+      \begin{tikzpicture}
+        \begin{axis}[
+            ylabel=IoU/\%,
+            legend style={%
+              at={(1, 0)},
+              anchor=south west,
+            },
+            legend entries={%
+              单任务在测试集,
+              单任务在训练集,
+              多任务在测试集,
+              多任务在训练集,
+              单任务前人最优结果,
+              多任务前人最优结果,
+          }]
+          \addplot[blue, mark=square*] table {data/stl-human-test.dat};
+          \addplot[blue, mark=square] table {data/stl-human-train.dat};
+          \addplot[red, mark=square*] table {data/mti-human-test.dat};
+          \addplot[red, mark=square] table {data/mti-human-train.dat};
+          \addplot[blue, domain=0:60] {61.4};
+          \addplot[red, domain=0:80] {62.1};
+        \end{axis}
+      \end{tikzpicture}
+    \end{frame}
+    \caption{人体解析}%
+    \label{fig:human}
+  \end{subfigure}
+
+  \begin{subfigure}[htbp]{\linewidth}
+    \centering
+    \begin{frame}[fragile]{显著点检测}
+      \begin{tikzpicture}
+        \begin{axis}[
+            ylabel=IoU/\%,
+            legend style={%
+              at={(1, 0)},
+              anchor=south west,
+            },
+            legend entries={%
+              单任务在测试集,
+              单任务在训练集,
+              多任务在测试集,
+              多任务在训练集,
+              单任务前人最优结果,
+              多任务前人最优结果,
+          }]
+          \addplot[blue, mark=x] table {data/stl-sal-test.dat};
+          \addplot[blue, mark=o] table {data/stl-sal-train.dat};
+          \addplot[red, mark=x] table {data/mti-sal-test.dat};
+          \addplot[red, mark=o] table {data/mti-sal-train.dat};
+          \addplot[blue, domain=0:60] {67.3};
+          \addplot[red, domain=0:80] {68.0};
+        \end{axis}
+      \end{tikzpicture}
+    \end{frame}
+    \caption{显著点检测}%
+    \label{fig:sal}
+  \end{subfigure}
+  \caption{单、多任务性能随时期的变化}%
+  \label{fig:result}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption{实验时间}%
+  \label{tab:time}
+  \csvautobooktabular[respect percent]{tables/time.csv}
+\end{table}
+
+\begin{frame}{实验结果}
+  本次实验结果与前人实验得到的最优结果在表~\ref{tab:result}中进行了对比。
+
+  \begin{table}[htbp]
+    \centering
+    \caption{单任务学习与多任务学习在不同任务上结果的比较}%
+    \label{tab:result}
+    \csvautobooktabular[respect percent]{tables/result.csv}
+  \end{table}
+\end{frame}
+
+\section{误差分析}%
+\label{sec:error}
+
+\begin{frame}{误差分析}
+  从表~\ref{tab:result}可以看出离最好结果相差2.6519、0.7433、0.598个百分点。分
+  析原因可能是：
+
+  \begin{itemize}
+    \item 本实验只使用了3个任务进行多任务学习，而数据集支持其它任务（深度预测、
+      边缘检测）等等，使用更多任务也许可以得到更好性能；
+    \item 实验结果本身就具有一定随机性，需要进行更多的重复实验。
+  \end{itemize}
+\end{frame}
+
+\mode<all>
+\end{document}

@@ -1,0 +1,81 @@
+\documentclass[../main]{subfiles}
+\begin{document}
+\mode*
+
+\chapter{模型}%
+\label{cha:model}
+
+\section{数据集}%
+\label{sec:dataset}
+
+多任务模型在视觉理解领域常用的数据集如下：
+
+\subsection{NYUD v2}%
+\label{sub:nyud}
+
+纽约大学深度 V2 数据集 NYU-Depth v2\cite{couprie2013indoor} 是由来自各种室内
+场景的视频序列组成，这些场景由来自 Microsoft Kinect 的 RGB 和深度摄像机录制。
+特点是：
+
+\begin{itemize}
+  \item 针对对齐的 RGB 和深度图像的 1449 个密集标记；
+  \item 从3个城市拍摄的464个新场景；
+  \item 407024 个新的无标签框架。
+\end{itemize}
+
+每个对象都标有类和实例编号。数据集包含如下组件：
+
+\begin{itemize}
+  \item Kinect 提供原始 RGB、深度和加速度计的数据。
+  \item 视频数据的一部分子集附有密集的多类标签。这些数据经过预处理以填充缺失的深度标签。
+  \item 用于操作数据和标签的有用工具。
+\end{itemize}
+
+\subsection{PASCAL}%
+\label{sub:pascal}
+
+\begin{frame}{PASCAL}
+  PASCAL 上下文数据集~\cite{Everingham2010}是 PASCAL VOC 2010 检测挑战的延伸，
+  它包含所有培训图像的像素标签。它包含超过 400 个类（包括原始的 20 个类加上
+  PASCAL VOC 细分的背景），分为三个类别（对象、内容和混合）。此数据集的许多对
+  象类别太稀少，因此，通常选择 59 个常用类的子集供使用。
+\end{frame}
+
+\section{建模}%
+\label{sec:model}
+
+\begin{frame}{任务}
+  我们选择 PASCAL 作为实验的数据集。在该数据集支持的任务中，我们选取如下任务：
+
+  \begin{description}
+    \item[语义分割]通过查找属于某一目标的所有像素来识别图像中所有存在目标的内
+      容以及位置；
+    \item[人类部位分割]或者叫人体解析。作为语义分割任务的子任务，需要进一步对
+      人类图像进行像素级的细粒度分割，例如，划分出身体部位和服装；
+    \item[显著点检测]通过算法模拟人的视觉，提取图像的显著区域~\cite{730558}。
+  \end{description}
+\end{frame}
+
+\begin{frame}{性能指标}
+  我们选取的用来衡量模型性能的指标如下：
+
+  \begin{definition}[IoU]
+    预测结果$\hat{A}$与真实结果$A$的交、并集之比。
+    式~\ref{eq:M}是式~\ref{eq:IoU}离散到像素单位上的计算方法，矩阵$\hat{M}, M$
+    是$\hat{A}, A$的离散表示。这是一个正指标。
+  \end{definition}
+
+  \begin{align}
+    \label{eq:IoU}
+    \mathrm{IoU} & = \frac{A \cap \hat{A}}{A \cup \hat{A}} \\
+    \label{eq:M}
+                 & \approx \frac{M \odot \hat{M}}{M \oplus \hat{M}}
+  \end{align}
+\end{frame}
+
+我们采用 HRNet 作为骨架。为了节省实验时间，使用了 HRNet 开发者提供的预训练模
+型初始化模型参数。对于多任务模型，采用 MTI 的网络架构。为了方便与前人结果进行
+对比，采用了与论文~\cite{9336293}相同的固定任务权重。
+
+\mode<all>
+\end{document}

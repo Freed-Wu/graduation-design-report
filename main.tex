@@ -1,54 +1,63 @@
 \documentclass{njustthesis}
-\setCJKfamilyfont{simfang}{simfang}
-\njustsetup{%
-  author = 吴振宇,
-  id = 916101630117,
-  discipline = 电子信息工程,
-  title = ,
-  title* = ,
-  supervisor = ,
-  supervisor-title = 教授,
-  judge = ,
-  signature = \includegraphics{signature},
-  judge-title = 教授,
+\usepackage[noamsthm, noamssymb]{beamerarticle}
+% \documentclass[aspectratio=169]{ctexbeamer}
+\mode<article>{%
+  \njustsetup{%
+    author = 吴振宇,
+    id = 916101630117,
+    discipline = 电子信息工程,
+    title = 基于多任务学习的视觉理解,
+    title* = {Multi-task Learning Based},
+    subtitle* = {Visual Understanding},
+    supervisor = 丁大志,
+    supervisor-title = 教授,
+    judge = 丁大志,
+    signature = \includegraphics{signature},
+    judge-title = 教授,
+    logo = \includegraphics[scale=1.25]{images/whole.pdf},
+  }
+  \newtheorem{definition}{定义}
+  \providecommand{\url}[1]{#1}
+  \newcommand\scale{1}
 }
-\usepackage[refpage]{nomencl}
-\makenomenclature%
-\renewcommand{\nomname}{术语}
-\renewcommand{\pagedeclaration}{，第1次出现在页~}
-\usepackage{minted}
-\setminted{%
-  breakanywhere,
-  breakanywheresymbolpre = {},
-  breaksymbolleft = {},
-  breaksymbolindentleftnchars = 0,
+\mode<presentation>{%
+  \usetheme[hideallsubsections]{Berkeley}
+  \usecolortheme{spruce}
+  \author{吴振宇}
+  \institute{NJUST}
+  \title{基于多任务学习的视觉理解}
+  \logo{\includegraphics[scale=0.75]{images/logo.pdf}}
+  \bibliographystyle{IEEEtran}
+  \newcommand\scale{0.3}
 }
-\usepackage{boxie}
-\usepackage{siunitx}
-\sisetup{mode = text}
-\usepackage{cases}
+\usepackage{subfiles}
 \usepackage{csvsimple}
 \usepackage{booktabs}
-\usepackage{subfiles}
 \usepackage{subcaption}
-\newtheorem{definition}{定义}
-\newtheorem{theorem}{定理}
-\numberwithin{Exercise}{chapter}
+\usepackage{dot2texi}
+\usepackage{pgfplots}
+\usepackage{tikz}
 \begin{document}
 
 \maketitle
+\mode<article>{\copyrightpage}
+\subfile{subfiles/abstract.tex}
 
-\frontmatter
-\tableofcontents
-\listoffigures
-\listoftables
-\listofexercises%
-\printnomenclature%
+\mode<article>{\frontmatter}
+\mode<article>{\tableofcontents}
 
-\mainmatter%
+\mode<article>{\mainmatter}
+\subfile{subfiles/introduction.tex}
+\subfile{subfiles/related-work.tex}
+\subfile{subfiles/model.tex}
+\subfile{subfiles/experiment.tex}
+\subfile{subfiles/conclusion.tex}
 
-\backmatter%
-\bibliography{bib/main}
+\mode<article>{\backmatter}
+\subfile{subfiles/acknowledgement.tex}
+\bibliography{refs/main.bib}
+
+\appendix
+\subfile{subfiles/detail.tex}
 
 \end{document}
-

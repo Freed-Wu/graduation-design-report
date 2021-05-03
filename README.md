@@ -1,22 +1,6 @@
 毕业设计(论文)工作要求及时间节点
 ===============================================
 
-材料目录
-------------
-
-- [毕业设计（论文）选题、审题表](introduction.md)
-- [毕业设计（论文）任务书](task.md)
-- [毕业设计（论文）开题报告〔含文献综述〕](overview.md)
-- [毕业设计（论文）外文资料翻译〔含原文〕](translation.md)
-- [毕业设计（论文）中期检查表](check.md)
-
-Compile
--------
-
-```sh
-pandoc --pdf-engine=latexmk --biblatex --bibliography=refs/main.bib --csl=china-national-standard-gb-t-7714-2015-numeric.csl overview.md -o overview.pdf
-```
-
 课题申报(教师10月26且前提交)
 ---------------------------------------
 

@@ -1,0 +1,105 @@
+\documentclass[../main]{subfiles}
+\begin{document}
+\mode*
+
+\chapter{引言}%
+\label{cha:introduction}
+\mode<presentation>{%
+  \section{引言}%
+  \label{sec:introduction}
+}
+
+\begin{frame}{研究背景}
+  在过去十年神经网络已经发挥了巨大的影响力。以计算机视觉领域的各种常见任务为例
+  （语义分割、实例分割、深度估计、目标检测等等），深度学习的算法均取得远超其它
+  方法的性能。按传统的研究方法，对以上这些任务，需要对每一个任务单独设计一个网
+  络，经过训练得到一个满足性能需求的模型。然而，只专注于一个任务的模型可能会
+  \alert{忽略一些相关任务中能大幅提升目标任务的潜在信息}。通过进行一定程度的不
+  同任务间的参数共享，可能会使原任务\alert{泛化能力更好}。
+\end{frame}
+
+与被称为单任务学习的前者相对的，后者通常被称为\cite{Caruana1998}：
+
+\begin{frame}{多任务学习}
+  \begin{definition}[多任务学习]
+    给定$m$个学习任务，其中所有或一部分任务是相关但并不完全一样的，多任务学习的
+    目标是通过使用这$m$个任务中包含的知识来帮助提升各个任务的性能。
+  \end{definition}
+\end{frame}
+
+多任务学习，又称联合学习、学习去学习、带有辅助任务的学习。
+如图~\ref{fig:transfer}所示，多任务学习作为迁移学习的一个
+分支~\cite{DBLP:journals/jair/DaumeM06}，与迁移学习通过利用多个相关任务的潜在
+信息以改善某一个任务的表现不同，更侧重于改善所有任务的表现。
+
+\begin{frame}<article>[fragile, label=transfer]{迁移学习分类}
+  \begin{figure}[htbp]
+    \centering
+    \begin{dot2tex}[scale=\scale]
+      digraph G {
+        node[shape=box]
+        迁移学习 -> 归纳迁移学习[label=目标域有标签]
+        迁移学习 -> 转导迁移学习[label=只有源域有标签]
+        迁移学习 -> 无监督迁移学习[label=源、目标域无标签]
+        归纳迁移学习 -> 情况一[label=源域无标签]
+        情况一 -> 自学习[dir=both]
+        归纳迁移学习 -> 情况二[label=源域有标签]
+        情况二 -> 多任务学习[label=源、目标任务同时学习]
+        转导迁移学习 -> 域适应[label=域不同，单任务]
+        转导迁移学习 -> 样本选择偏差协变量移位[label=单域，单任务]
+      }
+    \end{dot2tex}
+    \caption{迁移学习分类。多任务学习通常被定义为源、目标任务同时进行有监督学习
+    }%
+    \label{fig:transfer}
+  \end{figure}
+\end{frame}
+
+从 1993 年第一种多任务学习模型~\cite{DBLP:conf/icml/Caruana93}被提出，该领域
+经过了快 30 年的发展，产生了无数新的概念与方法。工业届的应用也如火如荼：
+
+\begin{itemize}
+  \item 阿里在\cite{ma2018entire}中通过多任务学习的模型以通过同时提高点击通过
+    率~\footnote{CTR = 广告的点击总次数/广告的展现量}、
+    点击转化率~\footnote{CVR = 用户注册或购买的总次数/广告的点击总次数}来获取
+    更高的经济效益；
+  \item\cite{DBLP:conf/eccv/ZhangLLT14}将脸部特征点检测同识别眼睛、笑脸、性别
+    、姿态（正面、侧面）等分类任务结合起来的方法已经被业界广泛；
+  \item 从谷歌的\cite{DBLP:journals/corr/abs-1810-04805}开始，将自然语言处理
+    的多个下游任务联合学习的方法已经成为主流。
+\end{itemize}
+
+可以看出这些常见应用的例子中，多个需要优化性能的任务是相关的，这种相关可能是
+：
+
+\begin{itemize}
+  \item 多个任务训练使用的数据集是相同的；
+  \item 多个任务是对相同输入但存在不同噪声的输入信号进行处理。
+\end{itemize}
+
+事实上，如果将多个不相关的任务一起训练，反而可能会产生性能恶化的情况，通常称
+之为：
+
+\begin{frame}{负迁移}
+  \begin{definition}[负迁移]
+    同一个模型训练多个任务后相比较训练单个任务在某一任务上性能下降的现象。
+  \end{definition}
+\end{frame}
+
+\begin{frame}{目标}
+  多任务学习的核心目标，即是通过如下的方法来尽可能提高模型的泛化能力，避免负迁
+  移的现象发生。
+
+  \begin{itemize}
+    \item 合理地设计网络的架构；
+    \item 合理地采用训练的方法（通常是调整多个任务损失加权的权重）。
+  \end{itemize}
+\end{frame}
+
+接下来的章节~\ref{cha:related-work} 会针对这两种方法分别介绍相关的工作；
+然后，章节~\ref{cha:model} 会针对一个常见的数据集进行建模；
+而章节~\ref{cha:experiment} 会给出实际的实验结果；
+最后，章节~\ref{cha:conclusion} 会给出最终的实验总结。
+
+\mode<all>
+\end{document}
