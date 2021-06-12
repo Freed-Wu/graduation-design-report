@@ -44,8 +44,148 @@
 \section{建模}%
 \label{sec:model}
 
+\begin{frame}{模型}
+  我们采用 HRNet~\cite{WangSCJDZLMTWLX19}~\footnote{High Resolution Network}
+  作为骨架。为了节省实验时间，使用了预训练模型初始化模型参数。
+
+  图~\ref{fig:hrnet} 的 HRNet 抛弃了分辨率从高到低，最后再插值升
+  高的串联卷积网络的架构，将多个不同分辨率的特征并行混合以充分利用不同分辨率
+  的特征。
+\end{frame}
+
+网络层的设计如下：
+
+\begin{description}
+  \item[残差层]残差层与图~\ref{fig:reslayer} 相同。每个残差层后通过步距为 2
+    的卷积进行降采样得到一个分辨率减半的张量用于新分支网络的输入，这会导致最
+    终的多个输出存在分辨率依次减半的关系；
+  \item[混合层]混合层将多个输入通过一个卷积层后相加得到输出，如果输入的分辨率
+    （图片以像素为单位的长、宽）不同则先进行双线性插值；
+  \item[过渡层]如果前后输入输出通道数相同，则过渡层为恒等变换，否则过渡层为一
+    个卷积层。
+\end{description}
+
+\begin{frame}[fragile]{HRNet}
+  \begin{figure}[htbp]
+    \centering
+    \begin{dot2tex}[scale=\scale]
+      strict digraph G{
+        rankdir=BT
+        ranksep=0
+        style=invis
+        node[shape=box]
+        subgraph cluster{
+          {输入[shape=plaintext]} -> 残差层 ->
+          过渡层1a -> 残差层1a -> 混合层1a ->
+          过渡层2a -> 残差层2a -> 混合层2a ->
+          过渡层3a -> 残差层3a -> 混合层3a ->
+          {输出a[shape=plaintext]}
+        }
+        subgraph cluster1{
+          过渡层1b -> 残差层1b -> 混合层1b ->
+          过渡层2b -> 残差层2b -> 混合层2b ->
+          过渡层3b -> 残差层3b -> 混合层3b ->
+          {输出b[shape=plaintext]}
+        }
+        subgraph cluster2{
+          过渡层2c -> 残差层2c -> 混合层2c ->
+          过渡层3c -> 残差层3c -> 混合层3c ->
+          {输出c[shape=plaintext]}
+        }
+        subgraph cluster3{
+          过渡层3d -> 残差层3d -> 混合层3d ->
+          {输出d[shape=plaintext]}
+        }
+        {残差层1a 残差层1b} -> {混合层1a 混合层1b}
+        {残差层2a 残差层2b 残差层2c} -> {混合层2a 混合层2b 混合层2c}
+        {残差层3a 残差层3b 残差层3c 残差层3d} ->
+        {混合层3a 混合层3b 混合层3c 混合层3d}
+        edge[style=dashed]
+        残差层 -> 过渡层1b
+        混合层1b -> 过渡层2c
+        混合层2c -> 过渡层3d
+      }
+    \end{dot2tex}
+    \caption{HRNet ，虚线箭头代表利用步距为2的卷积进行降采样，最后多个输出的分
+      辨率因降采样的原因依次减半}%
+    \label{fig:hrnet}
+  \end{figure}
+\end{frame}
+
+\newpage
+多尺度任务交互网络 MTI 网络~\cite{vandenhende2020mti}~\footnote{Multi-Scale
+Task Interaction}使用高分辨率网络 HRNet 做骨干而不是传统的 ResNet ，原因是为
+了尽可能的利用不同分辨率的特征。
+
+\begin{frame}[fragile]{MTI Net}
+  \begin{figure}[htbp]
+    \centering
+    \begin{dot2tex}[scale=\scale]
+      digraph G{
+        rankdir=BT
+        ranksep=0
+        nodesep=0
+        node[shape=plaintext]
+        {HRNet[shape=box]} -> {输出a 输出b 输出c 输出d}
+        subgraph cluster{
+          node[shape=box]
+          label=解码器
+          {
+            style=invis
+            subgraph cluster1{
+              混合a 混合b 混合c 混合d
+            }
+            subgraph cluster2{
+              初始化a 初始化b 初始化c 初始化d
+            }
+          }
+          混合a -> 初始化a
+          混合b -> 初始化b
+          混合c -> 初始化c
+          混合d -> 初始化d
+          {
+            edge[style=dashed]
+            初始化a -> 蒸馏层a
+            初始化b -> 蒸馏层b
+            初始化c -> 蒸馏层c
+            初始化d -> 蒸馏层d
+          }
+          {蒸馏层a 蒸馏层b 蒸馏层c 蒸馏层d} -> {特征聚合1 特征聚合2 特征聚合3}
+          edge[dir=back]
+          混合b -> 特征传播层b
+          混合c -> 特征传播层c
+          混合d -> 特征传播层d
+          edge[style=dashed]
+          特征传播层b -> 初始化a
+          特征传播层c -> 初始化b
+          特征传播层d -> 初始化c
+        }
+        输出a -> 混合a
+        输出b -> 混合b
+        输出c -> 混合c
+        输出d -> 混合d
+        特征聚合1 -> 任务1输出
+        特征聚合2 -> 任务2输出
+        特征聚合3 -> 任务3输出
+      }
+    \end{dot2tex}
+    \caption{MTI ，虚线箭头代表输出为与任务个数相同的张量}%
+    \label{fig:mti}
+  \end{figure}
+\end{frame}
+
+\begin{frame}{MTI 网络}
+  对于多任务模型，采用 MTI 的网络架构。
+
+  MTI 网络如图~\ref{fig:mti}。解码器集中型网络的任务交互集中在解码器，所以在
+  骨干上取消了阶段的设计，改为在解码器上进行任务信息的交换。解码器中出现的各
+  层网络均为 残差网络、卷积网络的混合。HRNet 的 4 个不同的输出分辨率由高到低
+  经过混合、初始化再传播到下一个分辨率。蒸馏的目的是为了减小特征的数量以提取
+  有用的特征。
+\end{frame}
+
 \begin{frame}{任务}
-  我们选择 PASCAL 作为实验的数据集。在该数据集支持的任务中，我们选取如下任务：
+  我们选择 PASCAL 做实验的数据集。在该数据集支持的任务中，我们选取如下任务：
 
   \begin{description}
     \item[语义分割]通过查找属于某一目标的所有像素来识别图像中所有存在目标的内
@@ -57,13 +197,16 @@
 \end{frame}
 
 \begin{frame}{性能指标}
-  我们选取的用来衡量模型性能的指标如下：
+  我们选取的用来衡量模型性能的指标为
+  IoU~\footnote{Intersection of Union}。为了方便与前人结果进行对比，采用了与
+  论文~\cite{9336293}相同的固定任务权重，以经过加权后得到性能来衡量多任务学习
+  比起单任务学习是否起到了提升的效果。
 
   \begin{definition}[IoU]
-    预测结果$\hat{A}$与真实结果$A$的交、并集之比。
-    式~\ref{eq:M}是式~\ref{eq:IoU}离散到像素单位上的计算方法，矩阵$\hat{M}, M$
-    是$\hat{A}, A$的离散表示。这是一个正指标。
-  \end{definition}
+    预测结果$\hat{A}$与真实结果$A$的交、并集之比。这是一个正指标。
+
+    式~\ref{eq:M}是式~\ref{eq:IoU}~离散到像素
+    单位上的计算方法，矩阵$\hat{M}, M$ 是$\hat{A}, A$的离散表示。  \end{definition}
 
   \begin{align}
     \label{eq:IoU}
@@ -72,10 +215,6 @@
                  & \approx \frac{M \odot \hat{M}}{M \oplus \hat{M}}
   \end{align}
 \end{frame}
-
-我们采用 HRNet 作为骨架。为了节省实验时间，使用了 HRNet 开发者提供的预训练模
-型初始化模型参数。对于多任务模型，采用 MTI 的网络架构。为了方便与前人结果进行
-对比，采用了与论文~\cite{9336293}相同的固定任务权重。
 
 \mode<all>
 \end{document}

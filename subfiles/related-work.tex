@@ -135,9 +135,10 @@
     \end{frame}
 \end{itemize}
 
+\newpage
 常见的多任务网络架构按图~\ref{fig:encoder-decoder} 分类如图~\ref{fig:net}。
 
-\begin{frame}<article>[fragile, label=net]{常见的多任务学习网络架构}
+\begin{frame}[fragile]{常见的多任务学习网络架构}
   \begin{figure}[htbp]
     \centering
     \begin{dot2tex}[scale=\scale]
@@ -147,7 +148,7 @@
         nodesep=0
         node[shape=plaintext]
         多任务网络架构 -> {编码器集中型 解码器集中型 其它}
-        编码器集中型 -> {硬参数连接 十字绣网络 水闸网络 "NDRR-CNN" MTAN
+        编码器集中型 -> {硬参数连接 十字绣网络 水闸网络 "NDDR-CNN" MTAN
         "分支 MTL"}
         解码器集中型 -> {"PAD 网络" "PAP 网络" "JTRL 网络" "MTI 网络" "PSD 网络"}
         其它 -> ASTMT
@@ -158,55 +159,67 @@
   \end{figure}
 \end{frame}
 
-\subsection{常见的编码器集中型}%
-\label{sub:encoders}
+图~\ref{fig:encoders} 均以图~\ref{fig:resnet} 的残差网络
+ResNet~\cite{He_2016_CVPR}~\footnote{Residual Network}
+为骨干。其中图~\ref{fig:nddr} 的
+十字绣网络~\cite{Misra_2016_CVPR}~\footnote{Cross-stitch Network}和
+区别性维度递减神经网络
+NDDR-CNN~\cite{Gao_2019_CVPR}~\footnote{Neural Discriminative Dimensionality Reduction}
+采用了软参数共享，而图~\ref{fig:mtan} 的
+多任务注意力网络 MTAN~\cite{Liu_2019_CVPR}~\footnote{Multi-Task Attention
+Network} 采用了硬参数共享。 3 种网络在 ResNet 的每个残差层前均插入一个共享的
+网络（即图~\ref{fig:encoders} 中灰色代表的网络），称之为阶段（共 4 个）。在阶
+段中不同的任务可以交换信息。
 
-常见的编码器集中型网络都以图~\ref{fig:resnet} 的 ResNet~\cite{He_2016_CVPR}
-为骨干。其中图~\ref{fig:nddr} 的十字绣网络~\cite{Misra_2016_CVPR}和
-NDDR-CNN~\cite{Gao_2019_CVPR} 采用了软参数共享，而图~\ref{fig:mtan} 的
-MTAN~\cite{Liu_2019_CVPR} 采用了硬参数共享。 3 种网络在 ResNet 的每个残差层前
-均插入一个共享的网络（即图~\ref{fig:encoders} 中灰色代表的网络），称之为阶段
-（共 4 个）。在阶段中不同的任务可以交换信息。
+\begin{frame}<article>[fragile, label=resnet]{残差网络}
+  \begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[htbp]{0.45\linewidth}
+      \centering
+      \begin{dot2tex}[scale=\scale]
+        digraph G{
+          rankdir=BT
+          ranksep=0
+          node[shape=box fillcolor=lightgray]
+          {
+            node[style=filled]
+            残差层1 残差层2 残差层3 残差层4
+          }
+          {输入[shape=plaintext style=""]} -> 卷积层 -> 残差层1 -> 残差层2 -> 残差层3
+          -> 残差层4 -> 全局平均池化层 -> 全连接层 -> {输出[shape=plaintext style=""]}
+        }
+      \end{dot2tex}
+      \caption{骨干}%
+      \label{fig:res}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}[htbp]{0.45\linewidth}
+      \centering
+      \begin{dot2tex}[scale=\scale]
+        digraph G{
+          rankdir=BT
+          ranksep=0
+          subgraph cluster{
+            label=残差层
+            style=filled
+            node[shape=box]
+            残差块1 -> 联接1 -> 残差块2 -> 联接2
+          }
+          node[shape=plaintext]
+          输入 -> 残差块1
+          输入 -> 联接1 -> 联接2[constraint=false]
+          联接2 -> 输出
+        }
+      \end{dot2tex}
+      \caption{残差层}%
+      \label{fig:reslayer}
+    \end{subfigure}
+    \caption{残差网络}%
+    \label{fig:resnet}
+  \end{figure}
+\end{frame}
 
-如图~\ref{fig:nddr} 所示， 十字绣网络通过一个简单的线型变换$A$将每一个
-阶段的输入（第$i$个任务在阶段前一个残差层的输出$x_i$联接在一起的张量$X$）变成
-该阶段的输出（第$i$个任务在阶段后一个残差层的输出$\tilde{x}_i$联接在一起的张
-量 $\tilde{X}$）。$A$ 是一个对角元素为$\alpha$、非对角元素为$\beta$的$T
-\times T$张量，其中$T$是任务个数，$\alpha, \beta$作为超参数常取为$\alpha =
-0.8, \beta = 0.05$。
-
-\begin{align}
-  \tilde{X} & = AX \\
-  \label{eq:A}
-  A_{ij} & = \alpha \times [i = j] + \beta \times [i \neq j] \\
-  X & = \begin{bmatrix}x_1 & x_2 & \cdots & x_T\end{bmatrix}^\mathsf{T} \\
-  \tilde{X} & = \begin{bmatrix}
-    \tilde{x}_1 & \tilde{x}_2 & \cdots & \tilde{x}_T
-  \end{bmatrix}^\mathsf{T}
-\end{align}
-
-如图~\ref{fig:nddr} 所示， NDRR-CNN 作为 十字绣网络的改进，使用 CNN
-$f_\mathrm{CNN}$代替了矩阵$A$ ，并在每一个阶段对输入在任务和通道 2 个维度上进
-行了信息的交换。 $f_\mathrm{CNN}$ 作为一个卷积核尺寸为$1 \times 1$、输入层数
-为$TC$、输出层数为 $T$ 的卷积神经网络，其权重是一个 $T \times TC \times 1
-\times 1$ 的 4 阶张量 $\tilde{A}$，初始化为$C$个$A$在第 2 个维度上的联接。$A$
-由式~\ref{eq:A} 决定， $C$为每个任务的通道个数，$x_{i, j}$为第$i$个任务在阶段
-前一个残差层的输出的第 $j$个通道的张量。
-
-\begin{align}
-  \tilde{X} & = f_\mathrm{CNN}(X) \\
-  X & = \begin{bmatrix}x_{1, 1} & x_{1, 2} & \cdots & x_{T, C}\end{bmatrix}^\mathsf{T}
-\end{align}
-
-因为图~\ref{fig:reslayer} 的 ResNet 的每个残差层均由 2 个残差块组成，所以可以
-利用残差块再进一步增加任务间信息交换的次数。如图~\ref{fig:mtan-detail} 所示，
-对每个任务，将残差块2前的输出$x^k$与阶段$k$的输入$y^{k - 1}$联接（在第 1 个阶
-段 $y^0$不存在不用联接）后，经过一个注意层（由2个 CNN 组成的网络）后得到
-$\tilde{y}^{k - 1}$，与残差块2后的输出$x^k$联接后通过一个残差块（该操作被称为
-提纯）后得到$y^k$。重复以上过程经过 4 个阶段再解码后得到第$i$个任务的最终输出
-。
-
-\begin{frame}<article>[fragile, label=encoders]{常见的编码器集中型}
+\begin{frame}<article>[fragile, label=encoders]{常见的以残差网络为骨干网的网络}
   \begin{figure}[htbp]
     \centering
     \begin{subfigure}[htbp]{0.45\linewidth}
@@ -262,11 +275,42 @@ $\tilde{y}^{k - 1}$，与残差块2后的输出$x^k$联接后通过一个残差�
       \caption{MTAN，硬参数共享}%
       \label{fig:mtan}
     \end{subfigure}
-    \caption{常见的编码器集中型}%
+    \caption{常见的以残差网络为骨干网的网络}%
     \label{fig:encoders}
   \end{figure}
 \end{frame}
 
+如图~\ref{fig:nddr} 所示， 十字绣网络通过一个简单的线型变换$A$将每一个
+阶段的输入（第$i$个任务在阶段前一个残差层的输出$x_i$联接在一起的张量$X$）变成
+该阶段的输出（第$i$个任务在阶段后一个残差层的输出$\tilde{x}_i$联接在一起的张
+量 $\tilde{X}$）。$A$ 是一个对角元素为$\alpha$、非对角元素为$\beta$的$T
+\times T$张量，其中$T$是任务个数，$\alpha, \beta$作为超参数常取为$\alpha =
+0.8, \beta = 0.05$。
+
+\begin{align}
+  \tilde{X} & = AX \\
+  \label{eq:A}
+  A_{ij} & = \alpha \times [i = j] + \beta \times [i \neq j] \\
+  X & = \begin{bmatrix}x_1 & x_2 & \cdots & x_T\end{bmatrix}^\mathsf{T} \\
+  \tilde{X} & = \begin{bmatrix}
+    \tilde{x}_1 & \tilde{x}_2 & \cdots & \tilde{x}_T
+  \end{bmatrix}^\mathsf{T}
+\end{align}
+
+如图~\ref{fig:nddr} 所示， NDDR-CNN 作为 十字绣网络的改进，使用 CNN
+$f_\mathrm{CNN}$代替了矩阵$A$ ，并在每一个阶段对输入在任务和通道 2 个维度上进
+行了信息的交换。 $f_\mathrm{CNN}$ 作为一个卷积核尺寸为$1 \times 1$、输入层数
+为$TC$、输出层数为 $T$ 的卷积神经网络，其权重是一个 $T \times TC \times 1
+\times 1$ 的 4 阶张量 $\tilde{A}$，初始化为$C$个$A$在第 2 个维度上的联接。$A$
+由式~\ref{eq:A} 决定， $C$为每个任务的通道个数，$x_{i, j}$为第$i$个任务在阶段
+前一个残差层的输出的第 $j$个通道的张量。
+
+\begin{align}
+  \tilde{X} & = f_\mathrm{CNN}(X) \\
+  X & = \begin{bmatrix}x_{1, 1} & x_{1, 2} & \cdots & x_{T, C}\end{bmatrix}^\mathsf{T}
+\end{align}
+
+\newpage
 \begin{frame}<article>[fragile, label=mtan-detail]{MTAN 的 ResNet 骨干与任务1
   信息交换的细节}
   \begin{figure}[htbp]
@@ -302,184 +346,13 @@ $\tilde{y}^{k - 1}$，与残差块2后的输出$x^k$联接后通过一个残差�
   \end{figure}
 \end{frame}
 
-\begin{frame}<article>[fragile, label=resnet]{残差网络}
-  \begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[htbp]{0.45\linewidth}
-      \centering
-      \begin{dot2tex}[scale=\scale]
-        digraph G{
-          rankdir=BT
-          ranksep=0
-          node[shape=box fillcolor=lightgray]
-          {
-            node[style=filled]
-            残差层1 残差层2 残差层3 残差层4
-          }
-          {输入[shape=plaintext style=""]} -> 卷积层 -> 残差层1 -> 残差层2 -> 残差层3
-          -> 残差层4 -> 全局平均池化层 -> 全连接层 -> {输出[shape=plaintext style=""]}
-        }
-      \end{dot2tex}
-      \caption{骨干}%
-      \label{fig:res}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[htbp]{0.45\linewidth}
-      \centering
-      \begin{dot2tex}[scale=\scale]
-        digraph G{
-          rankdir=BT
-          ranksep=0
-          subgraph cluster{
-            label=残差层
-            style=filled
-            node[shape=box]
-            残差块1 -> 联接1 -> 残差块2 -> 联接2
-          }
-          node[shape=plaintext]
-          输入 -> 残差块1
-          输入 -> 联接1 -> 联接2[constraint=false]
-          联接2 -> 输出
-        }
-      \end{dot2tex}
-      \caption{残差层}%
-      \label{fig:reslayer}
-    \end{subfigure}
-    \caption{残差网络}%
-    \label{fig:resnet}
-  \end{figure}
-\end{frame}
-
-\subsection{常见的解码器集中型}%
-\label{sub:decoders}
-
-\begin{frame}{HRNet}
-  MTI 网络~\cite{vandenhende2020mti}使用高分辨率网络
-  HRNet~\cite{WangSCJDZLMTWLX19} 做骨干而不是 ResNet。图~\ref{fig:hrnet} 的
-  HRNet 抛弃了分辨率从高到低，最后再插值升高的串联卷积网络的架构，将多个不同分
-  辨率的特征并行混合以充分利用不同分辨率的特征。
-\end{frame}
-
-网络层的设计如下：
-
-\begin{description}
-  \item[残差层]残差层与图~\ref{fig:reslayer} 相同。每个残差层后通过步距为 2
-    的卷积进行降采样得到一个分辨率减半的张量用于新分支网络的输入，这会导致最
-    终的多个输出存在分辨率依次减半的关系；
-  \item[混合层]混合层将多个输入通过一个卷积层后相加得到输出，如果输入的分辨率
-    （图片以像素为单位的长、宽）不同则先进行双线性插值；
-  \item[过渡层]如果前后输入输出通道数相同，则过渡层为恒等变换，否则过渡层为一
-    个卷积层。
-\end{description}
-
-\begin{frame}[fragile]{HRNet}
-  \begin{figure}[htbp]
-    \centering
-    \begin{dot2tex}[scale=\scale]
-      strict digraph G{
-        rankdir=BT
-        ranksep=0
-        style=invis
-        node[shape=box]
-        subgraph cluster{
-          {输入[shape=plaintext]} -> 残差层 ->
-          过渡层1a -> 残差层1a -> 混合层1a ->
-          过渡层2a -> 残差层2a -> 混合层2a ->
-          过渡层3a -> 残差层3a -> 混合层3a ->
-          {输出a[shape=plaintext]}
-        }
-        subgraph cluster1{
-          过渡层1b -> 残差层1b -> 混合层1b ->
-          过渡层2b -> 残差层2b -> 混合层2b ->
-          过渡层3b -> 残差层3b -> 混合层3b ->
-          {输出b[shape=plaintext]}
-        }
-        subgraph cluster2{
-          过渡层2c -> 残差层2c -> 混合层2c ->
-          过渡层3c -> 残差层3c -> 混合层3c ->
-          {输出c[shape=plaintext]}
-        }
-        subgraph cluster3{
-          过渡层3d -> 残差层3d -> 混合层3d ->
-          {输出d[shape=plaintext]}
-        }
-        {残差层1a 残差层1b} -> {混合层1a 混合层1b}
-        {残差层2a 残差层2b 残差层2c} -> {混合层2a 混合层2b 混合层2c}
-        {残差层3a 残差层3b 残差层3c 残差层3d} ->
-        {混合层3a 混合层3b 混合层3c 混合层3d}
-        edge[style=dashed]
-        残差层 -> 过渡层1b
-        混合层1b -> 过渡层2c
-        混合层2c -> 过渡层3d
-      }
-    \end{dot2tex}
-    \caption{HRNet ，虚线箭头代表利用步距为2的卷积进行降采样，最后多个输出的分
-      辨率因降采样的原因依次减半}%
-    \label{fig:hrnet}
-  \end{figure}
-\end{frame}
-
-\begin{frame}{MTI 网络}
-  MTI 网络如图~\ref{fig:mti}。解码器集中型网络的任务交互集中在解码器，所以在骨
-  干上取消了阶段的设计，改为在解码器上进行任务信息的交换。
-\end{frame}
-
-\begin{frame}[fragile]{MTI 网络}
-  \begin{figure}[htbp]
-    \centering
-    \begin{dot2tex}[scale=\scale]
-      digraph G{
-        rankdir=BT
-        ranksep=0
-        nodesep=0
-        node[shape=plaintext]
-        {HRNet[shape=box]} -> {输出a 输出b 输出c 输出d}
-        subgraph cluster{
-          node[shape=box]
-          label=解码器
-          {
-            style=invis
-            subgraph cluster1{
-              混合a 混合b 混合c 混合d
-            }
-            subgraph cluster2{
-              初始化a 初始化b 初始化c 初始化d
-            }
-          }
-          混合a -> 初始化a
-          混合b -> 初始化b
-          混合c -> 初始化c
-          混合d -> 初始化d
-          {
-            edge[style=dashed]
-            初始化a -> 蒸馏层a
-            初始化b -> 蒸馏层b
-            初始化c -> 蒸馏层c
-            初始化d -> 蒸馏层d
-          }
-          {蒸馏层a 蒸馏层b 蒸馏层c 蒸馏层d} -> {特征聚合1 特征聚合2 特征聚合3}
-          edge[dir=back]
-          混合b -> 特征传播层b
-          混合c -> 特征传播层c
-          混合d -> 特征传播层d
-          edge[style=dashed]
-          特征传播层b -> 初始化a
-          特征传播层c -> 初始化b
-          特征传播层d -> 初始化c
-        }
-        输出a -> 混合a
-        输出b -> 混合b
-        输出c -> 混合c
-        输出d -> 混合d
-        特征聚合1 -> 任务1输出
-        特征聚合2 -> 任务2输出
-        特征聚合3 -> 任务3输出
-      }
-    \end{dot2tex}
-    \caption{MTI ，虚线箭头代表输出为与任务个数相同的张量}%
-    \label{fig:mti}
-  \end{figure}
-\end{frame}
+因为图~\ref{fig:reslayer} 的 ResNet 的每个残差层均由 2 个残差块组成，所以可以
+利用残差块再进一步增加任务间信息交换的次数。如图~\ref{fig:mtan-detail} 所示，
+对每个任务，将残差块2前的输出$x^k$与阶段$k$的输入$y^{k - 1}$联接（在第 1 个阶
+段 $y^0$不存在不用联接）后，经过一个注意层（由2个 CNN 组成的网络）后得到
+$\tilde{y}^{k - 1}$，与残差块2后的输出$x^k$联接后通过一个残差块（该操作被称为
+提纯）后得到$y^k$。重复以上过程经过 4 个阶段再解码后得到第$i$个任务的最终输出
+。
 
 \mode<article>{%
   \section{常见的多任务优化方法}%

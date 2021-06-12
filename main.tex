@@ -11,14 +11,16 @@
     subtitle* = {Visual Understanding},
     supervisor = 丁大志,
     supervisor-title = 教授,
-    judge = 丁大志,
-    signature = \includegraphics{signature},
+    associate-supervisor = 孙晓艳,
+    associate-supervisor-title = 教授,
+    judge = 李兆龙,
+    signature = \includegraphics{figures/signature.pdf},
     judge-title = 教授,
     logo = \includegraphics[scale=1.25]{images/whole.pdf},
   }
   \newtheorem{definition}{定义}
   \providecommand{\url}[1]{#1}
-  \newcommand\scale{1}
+  \newcommand\scale{0.8}
 }
 \mode<presentation>{%
   \usetheme[hideallsubsections]{Berkeley}
@@ -54,7 +56,9 @@
 \subfile{subfiles/conclusion.tex}
 
 \mode<article>{\backmatter}
+\pagestyle{empty}
 \subfile{subfiles/acknowledgement.tex}
+\newpage
 \bibliography{refs/main.bib}
 
 \appendix
